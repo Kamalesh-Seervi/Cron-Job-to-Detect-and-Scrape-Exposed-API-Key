@@ -1,0 +1,52 @@
+name: Scrape Secrets from GitHub Public Repos
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Runs every 15 minutes
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  scrape-secrets:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pytz
+
+      # Run the script
+      - name: Run scrape_secrets.py
+        env:
+          GITHUB_TOKEN: ${{ vars.SCRAPE_TOKEN }}
+        run: |
+          python scrape_secrets.py
+
+      # Commit changes to last_processed.txt
+      - name: Commit last_processed.txt
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add last_processed.txt
+          git diff --staged --quiet || git commit -m "Update last_processed.txt"
+          git push
+        continue-on-error: true
+
+      # Upload secrets_found.log as an artifact
+      - name: Upload secrets log
+        uses: actions/upload-artifact@v4
+        with:
+          name: secrets-found
+          path: secrets_found.log
+        if: always()  # Upload even if the script fails
