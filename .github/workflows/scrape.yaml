@@ -31,7 +31,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ vars.SCRAPE_TOKEN }}
         run: |
-          python scrape_secrets.py
+          python main.py
 
       # Commit changes to last_processed.txt
       - name: Commit last_processed.txt
